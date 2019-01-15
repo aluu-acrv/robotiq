@@ -19,9 +19,18 @@ https://answers.ros.org/question/219395/ros-node-does-not-recognize-haptic-devic
 6. ``lsusb -v``
 7. find "Future Technology..." 
     - get "id vendor" & "id product"
+probably looks something like this...
 
-8. create 10-mydevices.rules file and add a line similar to this: 
-    ATTRS{idProduct}=="6015", ATTRS{idVendor}=="0403", MODE="666", GROUP="plugdev"
+  idVendor           0x0403 Future Technology Devices International, Ltd
+  idProduct          0x6015 Bridge(I2C/SPI/UART/FIFO)
+
+8. create a new file in /etc/udev/rules.d named 10-mydevice.rules and add a line similar to this: 
+
+    sudo touch /etc/udev/rules.d/10-mydevice.rules
+    sudo nano /etc/udev/rules.d/10-mydevice.rules
+
+    copy paste the following if the id's are the same:
+        ATTRS{idProduct}=="6015", ATTRS{idVendor}=="0403", MODE="666", GROUP="plugdev"
 
 9. check you're a editing member of plugdev ``groups USERNAME``
 10. update rules ``sudo udevadm trigger``

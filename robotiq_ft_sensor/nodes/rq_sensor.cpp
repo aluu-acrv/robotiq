@@ -235,7 +235,8 @@ int main(int argc, char **argv)
 
 	//std_msgs::String msg;
 	geometry_msgs::WrenchStamped wrenchMsg;
-        ros::param::param<std::string>("~frame_id", wrenchMsg.header.frame_id, "robotiq_ft_frame_id");
+        ros::param::param<std::string>("~frame_id", wrenchMsg.header.frame_id, "fts_frame");
+        // ros::param::param<std::string>("~frame_id", wrenchMsg.header.frame_id, "robotiq_ft_frame_id");
 
 	ROS_INFO("Starting Sensor");
 	while(ros::ok())

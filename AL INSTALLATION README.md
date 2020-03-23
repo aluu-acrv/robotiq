@@ -4,8 +4,7 @@ by Amelia Luu 15/11/18
 https://github.com/ros-industrial/robotiq/tree/kinetic-devel
 
 2. rosdep install robotiq_modbus_tcp
-3. sudo apt-get install ros-kinetic-soem
-4. sudo apt-get install ros-kinetic-socketcan-interface
+3. sudo apt-get install ros-melodic-soem ros-melodic-socketcan-interface
 
 Follow instructions under Dependencies:
 https://github.com/Danfoa/invite-robotics/wiki/Intallation?fbclid=IwAR3D7D45PbQEPxJVZ-tftb8P639zgyGHlLQTm2AA37h2eVDcAQYIA15YpIA
@@ -32,7 +31,8 @@ probably looks something like this...
     copy paste the following if the id's are the same:
         ATTRS{idProduct}=="6015", ATTRS{idVendor}=="0403", MODE="666", GROUP="plugdev"
 
-9. check you're a editing member of plugdev ``groups USERNAME``
+9. check you're a editing member of plugdev ``groups`` 
+    check that your USERNAME is part of the list 
 10. update rules ``sudo udevadm trigger``
 
 11. connect ft sensor and it should publish to a topic!

@@ -1,0 +1,16 @@
+<launch>
+<!-- launch the FTS sensor -->
+    <node name="rq_sensor"
+        pkg="robotiq_ft_sensor"
+        type="rq_sensor"
+        output="screen"
+    />
+
+<!-- launch the transformer -->
+    <node name="ft_transformer"
+        pkg="robotiq_ft_sensor"
+        type="ft_transformer"
+        output="screen"
+    />
+
+</launch>

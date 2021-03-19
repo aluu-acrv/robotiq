@@ -20,9 +20,6 @@ private:
   ros::Publisher ft_pub;
   ros::Subscriber sub;
 
-  std::string ft_parent_frame = "tool0_controller";  // where the force torque readings originate from
-  std::string ft_child_frame = "fts_frame";          // where the ft sensor actually is located
-
   geometry_msgs::TransformStamped transformStamped;
 
 public:
@@ -30,8 +27,11 @@ public:
    * @brief Construct a new ft transformer object
    *
    * @param node
+   * @param ft_parent_frame, defaults to fts_frame - where we want ft sensor readings from
+   * @param ft_child_frame, defaults to tool0_controller - where the where the force torque readings originate from
    */
-  FT_Transformer(ros::NodeHandle* node);
+  FT_Transformer(ros::NodeHandle* node, std::string ft_parent_frame = "fts_frame",
+                 std::string ft_child_frame = "tool0_controller");
 
   /**
    * @brief Destroy the ft transformer object
@@ -62,10 +62,10 @@ public:
   void callback(const geometry_msgs::WrenchStamped::ConstPtr& msg);
 };
 
-FT_Transformer::FT_Transformer(ros::NodeHandle* node) : m_node(node)
+FT_Transformer::FT_Transformer(ros::NodeHandle* node, std::string parentf, std::string childf) : m_node(node)
 {
-  ROS_INFO("Attempting to get the transform...");
-  transformStamped = getTransform(ft_parent_frame, ft_child_frame);
+  ROS_INFO_STREAM("Attempting to get the transform from " << parentf << " to " << childf);
+  transformStamped = getTransform(parentf, childf);
 
   ROS_INFO("Got it! Initialising ROS...");
   initialiseROS();
@@ -122,8 +122,39 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "force_torque_transformer");
 
   ros::NodeHandle nh;
-  FT_Transformer ftt(&nh);
 
-  ros::spin();
+  try
+  {
+    if (argc == 1)
+    {
+      ROS_INFO_STREAM("Using default frame names.");
+      FT_Transformer ftt(&nh);
+    }
+    else if (argc == 3)
+    {
+      ROS_INFO_STREAM("Using specificed frame names.");
+      ROS_INFO_STREAM("Parent is /" << argv[1] << " and child is /" << argv[2]);
+      FT_Transformer ftt(&nh, argv[1], argv[2]);
+    }
+    else
+    {
+      std::stringstream err;
+      err << "You did not specify the right arguments.\nEither use defaults by typing: rosrun robotiq_ft_sensor "
+             "ft_transform, or\n try: rosrun robotiq_ft_sensor ft_transform <parent_frame> <child_frame>";
+      throw std::invalid_argument(err.str());
+    }
+    ros::spin();
+  }
+  catch (const std::invalid_argument& e)
+  {
+    ROS_ERROR_STREAM("Invalid Argument: " << e.what());
+    ros::shutdown();
+  }
+  catch (const std::exception& e)
+  {
+    ROS_ERROR_STREAM("Exception: " << e.what());
+    ros::shutdown();
+  }
+
   return 0;
 };

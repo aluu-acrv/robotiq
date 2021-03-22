@@ -1,5 +1,7 @@
 by Amelia Luu 15/11/18
 
+
+@TODO; check this clone cmd
 1. clone kinetic branch of robotiq
 https://github.com/ros-industrial/robotiq/tree/kinetic-devel
 
@@ -9,21 +11,19 @@ https://github.com/ros-industrial/robotiq/tree/kinetic-devel
 Follow instructions under Dependencies:
 https://github.com/Danfoa/invite-robotics/wiki/Intallation?fbclid=IwAR3D7D45PbQEPxJVZ-tftb8P639zgyGHlLQTm2AA37h2eVDcAQYIA15YpIA
 
-
-create exception in uart devices 
+create exception in uart devices
 https://answers.ros.org/question/219395/ros-node-does-not-recognize-haptic-device/?fbclid=IwAR1txTb4qyiGnJ6sPhrAUBOhYmGryTnvj1Dvpm0C1B6WMQ-l3ENbHoECkWY
-
 
 5. connect force torque sensor thorugh usb to your device
 6. ``lsusb -v``
-7. find "Future Technology..." 
+7. find "Future Technology..."
     - get "id vendor" & "id product"
 probably looks something like this...
 
   idVendor           0x0403 Future Technology Devices International, Ltd
   idProduct          0x6015 Bridge(I2C/SPI/UART/FIFO)
 
-8. create a new file in /etc/udev/rules.d named 10-mydevice.rules and add a line similar to this: 
+8. create a new file in /etc/udev/rules.d named 10-mydevice.rules and add a line similar to this:
 
     sudo touch /etc/udev/rules.d/10-mydevice.rules
     sudo nano /etc/udev/rules.d/10-mydevice.rules
@@ -31,9 +31,26 @@ probably looks something like this...
     copy paste the following if the id's are the same:
         ATTRS{idProduct}=="6015", ATTRS{idVendor}=="0403", MODE="666", GROUP="plugdev"
 
-9. check you're a editing member of plugdev ``groups`` 
-    check that your USERNAME is part of the list 
+9. check you're a editing member of plugdev ``groups``
+    check that your USERNAME is part of the list
 10. update rules ``sudo udevadm trigger``
 
 11. connect ft sensor and it should publish to a topic!
     ``rosrun robotiq_ft_sensor rq_sensor``
+
+
+RECOMMENDED: Decreasing the sensor latency
+In `./bashrc` script, under alias you can add these two lines:
+
+```
+alias fts100Hz="echo '2' | sudo tee --append /sys/bus/usb-serial/devices/ttyUSB0/latency_timer"
+alias checkFTSFreq="cat /sys/bus/usb-serial/devices/ttyUSB0/latency_timer"
+```
+
+Then in a new terminal (with the FTS connected through USB) type `fts100Hz` and `checkFTSFreq`.
+
+fts100Hz should result in '2'
+and checkFTSFreq should be 100Hz (instead of 60Hz)
+
+The robotiq ft sensor should publish at 100Hz instead of 60Hz now
+> This must be repeated everytime you reconnect the fts sensor serially in that lifetime

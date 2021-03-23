@@ -50,7 +50,12 @@ alias checkFTSFreq="cat /sys/bus/usb-serial/devices/ttyUSB0/latency_timer"
 Then in a new terminal (with the FTS connected through USB) type `fts100Hz` and `checkFTSFreq`.
 
 fts100Hz should result in '2'
-and checkFTSFreq should be 100Hz (instead of 60Hz)
+and if that's done correctly, checkFTSFreq should now print '2' as well (instead of '16' which is when publishing at 60Hz)
 
-The robotiq ft sensor should publish at 100Hz instead of 60Hz now
+The robotiq ft sensor should publish at 100Hz instead of 60Hz now. You can check by:
+
+```
+rostopic hz /robotiq_ft_wrench
+```
+
 > This must be repeated everytime you reconnect the fts sensor serially in that lifetime

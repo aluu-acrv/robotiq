@@ -12,5 +12,9 @@
         type="ft_transformer"
         output="screen"
     />
+        <!-- this are the defaults, works when on real robot -->
+        <!-- args="fts_frame tool0_controller" -->
 
+        <!-- if in simulation -->
+        <!-- args="fts_frame burnisher_ee" -->
 </launch>

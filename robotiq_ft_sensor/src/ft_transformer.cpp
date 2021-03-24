@@ -17,8 +17,15 @@ class FT_Transformer
 {
 private:
   ros::NodeHandle* m_node;
+
   ros::Publisher ft_pub;
   ros::Subscriber sub;
+
+  std::string original_fts_topic = "/robotiq_ft_wrench";
+  std::string transformed_fts_topic = "/robot/ft_transformed";
+
+  std::string par_frame;
+  std::string chi_frame;
 
   geometry_msgs::TransformStamped transformStamped;
 
@@ -50,9 +57,9 @@ public:
    *
    * @param parent the original frame
    * @param child the frame we want it in
-   * @return geometry_msgs::TransformStamped the transform between frames
+   * @return whether successfully got the transform between frames
    */
-  geometry_msgs::TransformStamped getTransform(std::string parent, std::string child);
+  bool getTransform(std::string parent, std::string child);
 
   /**
    * @brief The force torque data call back from original sensor.
@@ -62,40 +69,48 @@ public:
   void callback(const geometry_msgs::WrenchStamped::ConstPtr& msg);
 };
 
-FT_Transformer::FT_Transformer(ros::NodeHandle* node, std::string parentf, std::string childf) : m_node(node)
+FT_Transformer::FT_Transformer(ros::NodeHandle* node, std::string parentf, std::string childf)
+  : m_node(node), par_frame(parentf), chi_frame(childf)
 {
   ROS_INFO_STREAM("Attempting to get the transform from " << parentf << " to " << childf);
-  transformStamped = getTransform(parentf, childf);
+  getTransform(par_frame, chi_frame);
 
-  ROS_INFO("Got it! Initialising ROS...");
-  initialiseROS();
+  geometry_msgs::WrenchStampedConstPtr wrench_msg =
+      ros::topic::waitForMessage<geometry_msgs::WrenchStamped>(original_fts_topic, ros::Duration(10));
+  if (wrench_msg == NULL)
+  {
+    ROS_WARN_STREAM_THROTTLE(2, "Timed out - message did not arrive on " << original_fts_topic
+                                                                         << ". Is the FTS sensor connected?");
+  }
+  else
+  {
+    ROS_INFO("FTS is alive! Initialising ROS for transformer...");
+    // initialiseROS();
 
-  ROS_INFO("Done");
+    ft_pub = m_node->advertise<geometry_msgs::WrenchStamped>(transformed_fts_topic, 1);
+    sub = m_node->subscribe(original_fts_topic, 1, &FT_Transformer::callback, this);
+
+    ROS_INFO("Done");
+  }
 }
 
 FT_Transformer::~FT_Transformer()
 {
 }
 
-void FT_Transformer::initialiseROS()
-{
-  ft_pub = m_node->advertise<geometry_msgs::WrenchStamped>("/ft_transformed", 1);
-  sub = m_node->subscribe("/robotiq_ft_wrench", 1, &FT_Transformer::callback, this);
-}
-
-geometry_msgs::TransformStamped FT_Transformer::getTransform(std::string parent, std::string child)
+bool FT_Transformer::getTransform(std::string parent, std::string child)
 {
   tf2_ros::Buffer tfBuffer;
   tf2_ros::TransformListener tfListener(tfBuffer);
-  geometry_msgs::TransformStamped t;
+
   bool success;
   while (!success)
   {
     try
     {
-      t = tfBuffer.lookupTransform(parent, child, ros::Time(0));
-      ROS_INFO_STREAM("The transform from " << parent << " to " << child << " is: \n" << t);
-      return t;
+      transformStamped = tfBuffer.lookupTransform(parent, child, ros::Time(0));
+      ROS_INFO_STREAM("The transform from " << parent << " to " << child << " is: \n" << transformStamped);
+      return success;
     }
 
     catch (tf2::TransformException& ex)
@@ -112,29 +127,33 @@ void FT_Transformer::callback(const geometry_msgs::WrenchStamped::ConstPtr& msg)
   ROS_INFO_STREAM_ONCE("Got first geometry_msgs::WrenchStamped message! \n" << *msg);
   geometry_msgs::WrenchStamped transformed_ft_msg;
   tf2::doTransform(*msg, transformed_ft_msg, transformStamped);
+  transformed_ft_msg.header.frame_id = chi_frame;
   ROS_INFO_STREAM_ONCE("Transformed it to: \n" << transformed_ft_msg);
   ft_pub.publish(transformed_ft_msg);
-  ROS_INFO_STREAM_ONCE("Published transformed data");
+  ROS_INFO_STREAM_ONCE("Published transformed data WRT " << chi_frame);
 }
 
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "force_torque_transformer");
-
   ros::NodeHandle nh;
+
+  std::string in_par = "fts_frame";
+  std::string in_chi = "tool0_controller";
 
   try
   {
     if (argc == 1)
     {
       ROS_INFO_STREAM("Using default frame names.");
-      FT_Transformer ftt(&nh);
     }
     else if (argc == 3)
     {
       ROS_INFO_STREAM("Using specificed frame names.");
-      ROS_INFO_STREAM("Parent is /" << argv[1] << " and child is /" << argv[2]);
-      FT_Transformer ftt(&nh, argv[1], argv[2]);
+      in_par = argv[1];
+      in_chi = argv[2];
+      ROS_INFO_STREAM("Parent is /" << in_par << " and child is /" << in_chi);
+      // FT_Transformer ftt(&nh, argv[1], argv[2]);
     }
     else
     {
@@ -143,7 +162,6 @@ int main(int argc, char** argv)
              "ft_transform, or\n try: rosrun robotiq_ft_sensor ft_transform <parent_frame> <child_frame>";
       throw std::invalid_argument(err.str());
     }
-    ros::spin();
   }
   catch (const std::invalid_argument& e)
   {
@@ -156,5 +174,8 @@ int main(int argc, char** argv)
     ros::shutdown();
   }
 
+  FT_Transformer ftt(&nh, in_par, in_chi);
+
+  ros::spin();
   return 0;
 };

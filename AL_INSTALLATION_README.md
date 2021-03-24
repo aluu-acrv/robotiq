@@ -1,7 +1,11 @@
-by Amelia Luu 15/11/18
+## Installation instructions specific for setting up Robotiq's FT300 sensor on Ubuntu
 
+written by ALuu, last updated 24 March 2021
 
-@TODO; check this clone cmd
+----
+
+> NOTE: this clone step should NOT be required because it should have been added as a submodule as per instructions in overall [`~designrobotics-linishing/README.md`](../../../README.md)
+
 1. clone kinetic branch of robotiq
 https://github.com/ros-industrial/robotiq/tree/kinetic-devel
 

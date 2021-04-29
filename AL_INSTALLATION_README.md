@@ -44,12 +44,23 @@ probably looks something like this...
 
 
 RECOMMENDED: Decreasing the sensor latency
+
+More information regarding why there is a latency to begin with: https://github.com/ros-industrial/robotiq/issues/124
+
 In `./bashrc` script, under alias you can add these two lines:
 
 ```
 alias fts100Hz="echo '2' | sudo tee --append /sys/bus/usb-serial/devices/ttyUSB0/latency_timer"
 alias checkFTSFreq="cat /sys/bus/usb-serial/devices/ttyUSB0/latency_timer"
 ```
+
+> You may need to double check which ttyUSBx the FT300 has been attached to. To find out, go to 
+```
+cd /sys/bus/usb-serial/devices
+```
+
+There should be a series of folders titled ttyUSB0, ttyUSB1 etc. Find out which folder has the file `latency_timer`. This is the USB number that hsould be in the alias commands. 
+
 
 Then in a new terminal (with the FTS connected through USB) type `fts100Hz` and `checkFTSFreq`.
 
